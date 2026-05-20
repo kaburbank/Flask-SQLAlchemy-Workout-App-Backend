@@ -5,6 +5,14 @@ db = SQLAlchemy()
 
 # Define Models here
 
+# Relationships:
+# - A WorkoutExercise belongs to a Workout
+# - A WorkoutExercise belongs to an Exercise
+# - A Workout has many WorkoutExercises
+# - An Exercise has many WorkoutExercises
+# - A Workout has many Exercises through WorkoutExercises
+# - An Exercise has many Workouts through WorkoutExercises
+
 class Exercise(db.Model):
     __tablename__ = 'exercises'
     id = db.Column(db.Integer, primary_key=True)
@@ -12,7 +20,9 @@ class Exercise(db.Model):
     category = db.Column(db.String(80), nullable=True)
     equipment_needed = db.Column(db.Boolean, nullable=False, default=False)
 
-    workout_exercises = db.relationship('WorkoutExercise', backref='exercise', cascade='all, delete-orphan')
+    # An Exercise has many WorkoutExercises
+    workout_exercises = db.relationship('WorkoutExercise', back_populates='exercise', cascade='all, delete-orphan')
+    # An Exercise has many Workouts through WorkoutExercises
     workouts = db.relationship('Workout', secondary='workout_exercises', back_populates='exercises')
 
     @validates('name')
@@ -28,7 +38,9 @@ class Workout(db.Model):
     duration_minutes = db.Column(db.Integer, nullable=True)
     notes = db.Column(db.Text, nullable=True)
 
-    workout_exercises = db.relationship('WorkoutExercise', backref='workout', cascade='all, delete-orphan')
+    # A Workout has many WorkoutExercises
+    workout_exercises = db.relationship('WorkoutExercise', back_populates='workout', cascade='all, delete-orphan')
+    # A Workout has many Exercises through WorkoutExercises
     exercises = db.relationship('Exercise', secondary='workout_exercises', back_populates='workouts')
 
 class WorkoutExercise(db.Model):
@@ -39,6 +51,11 @@ class WorkoutExercise(db.Model):
     reps = db.Column(db.Integer, nullable=True)
     sets = db.Column(db.Integer, nullable=True)
     duration_seconds = db.Column(db.Integer, nullable=True)
+
+    # A WorkoutExercise belongs to a Workout
+    workout = db.relationship('Workout', back_populates='workout_exercises')
+    # A WorkoutExercise belongs to an Exercise
+    exercise = db.relationship('Exercise', back_populates='workout_exercises')
 
     __table_args__ = (
         db.UniqueConstraint('workout_id', 'exercise_id', name='uq_workout_exercise'),
