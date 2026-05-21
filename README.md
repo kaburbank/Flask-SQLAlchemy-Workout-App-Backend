@@ -1,27 +1,40 @@
+
 # Flask SQLAlchemy Workout App Backend
 
-A backend API for tracking workouts and exercises using Flask, SQLAlchemy, and Marshmallow.
+## Project Description
+A backend REST API for tracking workouts and exercises, built with Flask, SQLAlchemy, and Marshmallow. Supports full CRUD for workouts and exercises, and allows adding exercises to workouts with reps, sets, and duration. Includes robust validation at the model, schema, and database levels.
 
-## Features
-- Create, view, and delete workouts and exercises
-- Add exercises to workouts with sets, reps, and duration
-- Validations at model, schema, and database levels
-
-## Setup
+## Installation Instructions
 1. Install dependencies:
    ```bash
    pipenv install --dev
    ```
 2. Run migrations:
    ```bash
-   pipenv run flask db init
-   pipenv run flask db migrate -m "Initial migration"
-   pipenv run flask db upgrade
+   pipenv run flask --app migrate.py db init
+   pipenv run flask --app migrate.py db migrate -m "Initial migration"
+   pipenv run flask --app migrate.py db upgrade
    ```
-3. Start the server:
+3. Seed the database with example data:
    ```bash
-   pipenv run python server/app.py
+   pipenv run python server/seed.py
    ```
 
-## Endpoints
-See the code for available endpoints.
+## Run Instructions
+Start the development server:
+```bash
+pipenv run python server/app.py
+```
+
+## API Endpoints
+See ENDPOINTS.md for a full list and descriptions of all endpoints.
+
+## Files Included
+- Full Flask application (server/ directory)
+- Seed script: server/seed.py
+- Pipfile with all dependencies
+- README.md (this file)
+- ENDPOINTS.md (endpoint documentation)
+
+## Testing
+Test files can be added in a tests/ directory (not included by default).
