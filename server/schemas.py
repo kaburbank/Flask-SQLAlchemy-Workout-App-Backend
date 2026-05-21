@@ -1,24 +1,30 @@
-from marshmallow import Schema, fields
+from marshmallow_sqlalchemy import SQLAlchemyAutoSchema, auto_field
+from marshmallow_sqlalchemy.fields import Nested
+from server.models import Exercise, Workout, WorkoutExercise
 
-class ExerciseSchema(Schema):
-    id = fields.Int(dump_only=True)
-    name = fields.Str(required=True)
-    category = fields.Str()
-    equipment_needed = fields.Bool()
+class ExerciseSchema(SQLAlchemyAutoSchema):
+    class Meta:
+        model = Exercise
+        load_instance = True
+        include_relationships = True
+        sqla_session = None
+    workout_exercises = Nested('WorkoutExerciseSchema', many=True, exclude=("exercise",), dump_only=True)
+    workouts = Nested('WorkoutSchema', many=True, exclude=("exercises", "workout_exercises"), dump_only=True)
 
-class WorkoutExerciseSchema(Schema):
-    id = fields.Int(dump_only=True)
-    workout_id = fields.Int(required=True)
-    exercise_id = fields.Int(required=True)
-    reps = fields.Int(allow_none=True)
-    sets = fields.Int(allow_none=True)
-    duration_seconds = fields.Int(allow_none=True)
-    exercise = fields.Nested(ExerciseSchema, dump_only=True)
+class WorkoutExerciseSchema(SQLAlchemyAutoSchema):
+    class Meta:
+        model = WorkoutExercise
+        load_instance = True
+        include_fk = True
+        sqla_session = None
+    exercise = Nested('ExerciseSchema', exclude=("workout_exercises", "workouts"), dump_only=True)
+    workout = Nested('WorkoutSchema', exclude=("workout_exercises", "exercises"), dump_only=True)
 
-class WorkoutSchema(Schema):
-    id = fields.Int(dump_only=True)
-    date = fields.Date(required=True)
-    duration_minutes = fields.Int(allow_none=True)
-    notes = fields.Str(allow_none=True)
-    exercises = fields.Nested(ExerciseSchema, many=True, dump_only=True)
-    workout_exercises = fields.Nested(WorkoutExerciseSchema, many=True, dump_only=True)
+class WorkoutSchema(SQLAlchemyAutoSchema):
+    class Meta:
+        model = Workout
+        load_instance = True
+        include_relationships = True
+        sqla_session = None
+    exercises = Nested('ExerciseSchema', many=True, exclude=("workouts", "workout_exercises"), dump_only=True)
+    workout_exercises = Nested('WorkoutExerciseSchema', many=True, exclude=("workout",), dump_only=True)
