@@ -1,8 +1,14 @@
 from marshmallow_sqlalchemy import SQLAlchemyAutoSchema, auto_field
 from marshmallow_sqlalchemy.fields import Nested
+from marshmallow import validates, ValidationError, validates_schema
 from server.models import Exercise, Workout, WorkoutExercise
 
 class ExerciseSchema(SQLAlchemyAutoSchema):
+        @validates('name')
+        def validate_name(self, value):
+            if not value or len(value) < 3:
+                raise ValidationError('Exercise name must be at least 3 characters long.')
+
     class Meta:
         model = Exercise
         load_instance = True
@@ -21,6 +27,18 @@ class WorkoutExerciseSchema(SQLAlchemyAutoSchema):
     workout = Nested('WorkoutSchema', exclude=("workout_exercises", "exercises"), dump_only=True)
 
 class WorkoutSchema(SQLAlchemyAutoSchema):
+        @validates('date')
+        def validate_date(self, value):
+            from datetime import date as dt_date
+            if value > dt_date.today():
+                raise ValidationError('Workout date cannot be in the future.')
+
+        @validates_schema
+        def validate_positive_fields(self, data, **kwargs):
+            for field in ['reps', 'sets', 'duration_seconds']:
+                val = data.get(field)
+                if val is not None and val < 0:
+                    raise ValidationError(f"{field} must be non-negative.")
     class Meta:
         model = Workout
         load_instance = True
