@@ -20,6 +20,10 @@ class Exercise(db.Model):
     category = db.Column(db.String(80), nullable=True)
     equipment_needed = db.Column(db.Boolean, nullable=False, default=False)
 
+    __table_args__ = (
+        db.UniqueConstraint('name', name='uq_exercise_name'),  # Table constraint: name must be unique
+    )
+
     # An Exercise has many WorkoutExercises
     workout_exercises = db.relationship('WorkoutExercise', back_populates='exercise', cascade='all, delete-orphan')
     # An Exercise has many Workouts through WorkoutExercises
@@ -38,10 +42,21 @@ class Workout(db.Model):
     duration_minutes = db.Column(db.Integer, nullable=True)
     notes = db.Column(db.Text, nullable=True)
 
+    __table_args__ = (
+        db.CheckConstraint('duration_minutes IS NULL OR duration_minutes >= 0', name='ck_workout_duration_positive'),  # Table constraint: duration_minutes must be positive if present
+    )
+
     # A Workout has many WorkoutExercises
     workout_exercises = db.relationship('WorkoutExercise', back_populates='workout', cascade='all, delete-orphan')
     # A Workout has many Exercises through WorkoutExercises
     exercises = db.relationship('Exercise', secondary='workout_exercises', back_populates='workouts')
+
+    @validates('date')
+    def validate_date(self, key, value):
+        from datetime import date as dt_date
+        if value > dt_date.today():
+            raise ValueError('Workout date cannot be in the future.')
+        return value
 
 class WorkoutExercise(db.Model):
     __tablename__ = 'workout_exercises'
@@ -52,14 +67,17 @@ class WorkoutExercise(db.Model):
     sets = db.Column(db.Integer, nullable=True)
     duration_seconds = db.Column(db.Integer, nullable=True)
 
+    __table_args__ = (
+        db.UniqueConstraint('workout_id', 'exercise_id', name='uq_workout_exercise'),  # Table constraint: prevent duplicate exercise in the same workout
+        db.CheckConstraint('reps IS NULL OR reps >= 0', name='ck_reps_positive'),
+        db.CheckConstraint('sets IS NULL OR sets >= 0', name='ck_sets_positive'),
+        db.CheckConstraint('duration_seconds IS NULL OR duration_seconds >= 0', name='ck_duration_positive'),
+    )
+
     # A WorkoutExercise belongs to a Workout
     workout = db.relationship('Workout', back_populates='workout_exercises')
     # A WorkoutExercise belongs to an Exercise
     exercise = db.relationship('Exercise', back_populates='workout_exercises')
-
-    __table_args__ = (
-        db.UniqueConstraint('workout_id', 'exercise_id', name='uq_workout_exercise'),
-    )
 
     @validates('sets', 'reps', 'duration_seconds')
     def validate_positive(self, key, value):
