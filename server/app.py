@@ -28,15 +28,12 @@ def create_app():
     @app.route('/workouts', methods=['POST'])
     def create_workout():
         data = request.get_json()
+        schema = WorkoutSchema()
         try:
-            workout = Workout(
-                date=data['date'],
-                duration_minutes=data.get('duration_minutes'),
-                notes=data.get('notes')
-            )
+            workout = schema.load(data)
             db.session.add(workout)
             db.session.commit()
-            return jsonify(WorkoutSchema().dump(workout)), 201
+            return jsonify(schema.dump(workout)), 201
         except Exception as e:
             db.session.rollback()
             return jsonify({'error': str(e)}), 400
@@ -63,15 +60,12 @@ def create_app():
     @app.route('/exercises', methods=['POST'])
     def create_exercise():
         data = request.get_json()
+        schema = ExerciseSchema()
         try:
-            exercise = Exercise(
-                name=data['name'],
-                category=data.get('category'),
-                equipment_needed=data.get('equipment_needed', False)
-            )
+            exercise = schema.load(data)
             db.session.add(exercise)
             db.session.commit()
-            return jsonify(ExerciseSchema().dump(exercise)), 201
+            return jsonify(schema.dump(exercise)), 201
         except Exception as e:
             db.session.rollback()
             return jsonify({'error': str(e)}), 400
@@ -88,19 +82,15 @@ def create_app():
     @app.route('/workouts/<int:workout_id>/exercises/<int:exercise_id>/workout_exercises', methods=['POST'])
     def add_exercise_to_workout(workout_id, exercise_id):
         data = request.get_json()
-        workout = Workout.query.get_or_404(workout_id)
-        exercise = Exercise.query.get_or_404(exercise_id)
+        # Ensure workout and exercise exist
+        Workout.query.get_or_404(workout_id)
+        Exercise.query.get_or_404(exercise_id)
+        schema = WorkoutExerciseSchema()
         try:
-            we = WorkoutExercise(
-                workout_id=workout.id,
-                exercise_id=exercise.id,
-                reps=data.get('reps'),
-                sets=data.get('sets'),
-                duration_seconds=data.get('duration_seconds')
-            )
+            we = schema.load({**data, 'workout_id': workout_id, 'exercise_id': exercise_id})
             db.session.add(we)
             db.session.commit()
-            return jsonify(WorkoutExerciseSchema().dump(we)), 201
+            return jsonify(schema.dump(we)), 201
         except Exception as e:
             db.session.rollback()
             return jsonify({'error': str(e)}), 400
