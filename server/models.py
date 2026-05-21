@@ -25,9 +25,9 @@ class Exercise(db.Model):
     )
 
     # An Exercise has many WorkoutExercises
-    workout_exercises = db.relationship('WorkoutExercise', back_populates='exercise', cascade='all, delete-orphan')
+    workout_exercises = db.relationship('WorkoutExercise', back_populates='exercise', cascade='all, delete-orphan', overlaps="workouts,exercises")
     # An Exercise has many Workouts through WorkoutExercises
-    workouts = db.relationship('Workout', secondary='workout_exercises', back_populates='exercises')
+    workouts = db.relationship('Workout', secondary='workout_exercises', back_populates='exercises', overlaps="workout_exercises,exercises")
 
     @validates('name')
     def validate_name(self, key, value):
@@ -47,9 +47,9 @@ class Workout(db.Model):
     )
 
     # A Workout has many WorkoutExercises
-    workout_exercises = db.relationship('WorkoutExercise', back_populates='workout', cascade='all, delete-orphan')
+    workout_exercises = db.relationship('WorkoutExercise', back_populates='workout', cascade='all, delete-orphan', overlaps="exercises,workouts")
     # A Workout has many Exercises through WorkoutExercises
-    exercises = db.relationship('Exercise', secondary='workout_exercises', back_populates='workouts')
+    exercises = db.relationship('Exercise', secondary='workout_exercises', back_populates='workouts', overlaps="workout_exercises,workouts")
 
     @validates('date')
     def validate_date(self, key, value):
@@ -75,9 +75,9 @@ class WorkoutExercise(db.Model):
     )
 
     # A WorkoutExercise belongs to a Workout
-    workout = db.relationship('Workout', back_populates='workout_exercises')
+    workout = db.relationship('Workout', back_populates='workout_exercises', overlaps="exercises,workouts")
     # A WorkoutExercise belongs to an Exercise
-    exercise = db.relationship('Exercise', back_populates='workout_exercises')
+    exercise = db.relationship('Exercise', back_populates='workout_exercises', overlaps="workouts,exercises")
 
     @validates('sets', 'reps', 'duration_seconds')
     def validate_positive(self, key, value):
