@@ -1,4 +1,3 @@
-
 # Flask SQLAlchemy Workout App Backend
 
 ## Project Description
@@ -37,4 +36,11 @@ See ENDPOINTS.md for a full list and descriptions of all endpoints.
 - ENDPOINTS.md (endpoint documentation)
 
 ## Testing
-Test files can be added in a tests/ directory (not included by default).
+
+To run the tests, make sure you have pytest installed (it is included in the Pipfile). Then run:
+
+```bash
+pipenv run pytest
+```
+
+Test files are located in the `tests/` directory. The tests cover basic creation and relationships for exercises, workouts, and adding exercises to workouts.
