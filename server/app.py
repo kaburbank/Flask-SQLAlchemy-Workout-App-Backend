@@ -1,6 +1,7 @@
-from flask import Flask, make_response
+from flask import Flask, request, jsonify, abort
 from flask_migrate import Migrate
 from server.models import db, Exercise, Workout, WorkoutExercise
+from server.schemas import ExerciseSchema, WorkoutSchema, WorkoutExerciseSchema
 import os
 
 def create_app():
@@ -11,7 +12,98 @@ def create_app():
     db.init_app(app)
     Migrate(app, db)
 
-    # Define Routes here
+
+    # --- Workouts Endpoints ---
+    @app.route('/workouts', methods=['GET'])
+    def get_workouts():
+        workouts = Workout.query.all()
+        return jsonify(WorkoutSchema(many=True).dump(workouts)), 200
+
+    @app.route('/workouts/<int:workout_id>', methods=['GET'])
+    def get_workout(workout_id):
+        workout = Workout.query.get_or_404(workout_id)
+        # Stretch: include reps/sets/duration from WorkoutExercises
+        return jsonify(WorkoutSchema().dump(workout)), 200
+
+    @app.route('/workouts', methods=['POST'])
+    def create_workout():
+        data = request.get_json()
+        try:
+            workout = Workout(
+                date=data['date'],
+                duration_minutes=data.get('duration_minutes'),
+                notes=data.get('notes')
+            )
+            db.session.add(workout)
+            db.session.commit()
+            return jsonify(WorkoutSchema().dump(workout)), 201
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'error': str(e)}), 400
+
+    @app.route('/workouts/<int:workout_id>', methods=['DELETE'])
+    def delete_workout(workout_id):
+        workout = Workout.query.get_or_404(workout_id)
+        # Stretch: delete associated WorkoutExercises (handled by cascade)
+        db.session.delete(workout)
+        db.session.commit()
+        return '', 204
+
+    # --- Exercises Endpoints ---
+    @app.route('/exercises', methods=['GET'])
+    def get_exercises():
+        exercises = Exercise.query.all()
+        return jsonify(ExerciseSchema(many=True).dump(exercises)), 200
+
+    @app.route('/exercises/<int:exercise_id>', methods=['GET'])
+    def get_exercise(exercise_id):
+        exercise = Exercise.query.get_or_404(exercise_id)
+        return jsonify(ExerciseSchema().dump(exercise)), 200
+
+    @app.route('/exercises', methods=['POST'])
+    def create_exercise():
+        data = request.get_json()
+        try:
+            exercise = Exercise(
+                name=data['name'],
+                category=data.get('category'),
+                equipment_needed=data.get('equipment_needed', False)
+            )
+            db.session.add(exercise)
+            db.session.commit()
+            return jsonify(ExerciseSchema().dump(exercise)), 201
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'error': str(e)}), 400
+
+    @app.route('/exercises/<int:exercise_id>', methods=['DELETE'])
+    def delete_exercise(exercise_id):
+        exercise = Exercise.query.get_or_404(exercise_id)
+        # Stretch: delete associated WorkoutExercises (handled by cascade)
+        db.session.delete(exercise)
+        db.session.commit()
+        return '', 204
+
+    # --- Add Exercise to Workout ---
+    @app.route('/workouts/<int:workout_id>/exercises/<int:exercise_id>/workout_exercises', methods=['POST'])
+    def add_exercise_to_workout(workout_id, exercise_id):
+        data = request.get_json()
+        workout = Workout.query.get_or_404(workout_id)
+        exercise = Exercise.query.get_or_404(exercise_id)
+        try:
+            we = WorkoutExercise(
+                workout_id=workout.id,
+                exercise_id=exercise.id,
+                reps=data.get('reps'),
+                sets=data.get('sets'),
+                duration_seconds=data.get('duration_seconds')
+            )
+            db.session.add(we)
+            db.session.commit()
+            return jsonify(WorkoutExerciseSchema().dump(we)), 201
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'error': str(e)}), 400
 
     return app
 
